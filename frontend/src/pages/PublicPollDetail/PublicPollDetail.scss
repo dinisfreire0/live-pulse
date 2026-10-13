@@ -1,104 +1,82 @@
-@use '../../styles/tokens' as *;
+@use '../../styles' as *;
 
 .public-poll {
-  max-width: 640px;
-  margin: 0 auto;
+  @include centered-column;
 
   &__card {
-    @include card;
-    display: grid;
-    gap: $space-5;
-    padding: $space-5 $space-6;
+    @include card($space-5 $space-6, $space-4);
+    @include stack($space-5);
 
     @include mobile {
-      padding: $space-4;
       border-radius: $radius-sm;
     }
   }
 
   &__header {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    justify-content: space-between;
-    gap: $space-2;
+    @include flex-between;
   }
 
   &__meta {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: $space-3;
+    @include flex($gap: $space-3, $wrap: wrap);
   }
 
   &__question {
-    font-size: 1.625rem;
-    overflow-wrap: anywhere;
+    @include break-words;
+    font-size: $font-size-2xl;
 
     @include mobile {
-      font-size: 1.375rem;
+      font-size: $font-size-xl;
     }
   }
 
   &__form {
-    display: grid;
-    gap: $space-4;
+    @include stack($space-4);
   }
 
   &__options {
-    display: grid;
-    gap: $space-3;
-    margin: 0;
-    padding: 0;
-    border: 0;
+    @include reset-fieldset;
+    @include stack($space-3);
   }
 
   &__legend {
+    @include text-secondary;
     margin-bottom: $space-2;
     padding: 0;
-    color: $color-muted;
-    font-size: 0.875rem;
   }
 
   &__option {
-    display: flex;
-    align-items: center;
-    gap: $space-3;
-    min-height: 56px;
+    @include flex($gap: $space-3);
+    @include transition(border-color, background);
+    min-height: $choice-min-height;
     padding: $space-3 $space-4;
-    border: 2px solid $color-border;
-    border-radius: $radius;
-    font-weight: 600;
+    border: $border-width-thick solid $color-border;
+    border-radius: $radius-md;
+    font-weight: $font-weight-semibold;
     cursor: pointer;
-    transition:
-      border-color 0.15s,
-      background 0.15s;
 
     &:hover {
-      border-color: rgba($color-primary, 0.5);
+      border-color: rgba($color-primary, $alpha-hover-border);
     }
 
-    &--selected {
+    // `:hover` is more specific than the modifier and sticks after a tap on
+    // touch screens, so the selected state has to cover it too.
+    &--selected,
+    &--selected:hover {
       border-color: $color-primary;
       background: $color-primary-soft;
     }
 
     input {
-      width: 20px;
-      height: 20px;
-      margin: 0;
-      flex-shrink: 0;
-      accent-color: $color-primary;
+      @include checkable($radio-size);
     }
 
     span {
-      overflow-wrap: anywhere;
+      @include break-words;
     }
   }
 
   &__submit {
-    min-height: 48px;
-    font-size: 1rem;
+    @include button-size($control-height-xl, $space-2, $space-4, $font-size-base);
 
     @include mobile {
       width: 100%;
@@ -106,8 +84,7 @@
   }
 
   &__status {
-    display: grid;
-    gap: $space-2;
+    @include stack($space-2);
 
     p {
       margin: 0;
@@ -120,11 +97,11 @@
 
   &__results {
     padding-top: $space-5;
-    border-top: 1px solid $color-border;
+    border-top: $border-width solid $color-border;
   }
 
   &__results-title {
     margin-bottom: $space-4;
-    font-size: 1.125rem;
+    font-size: $font-size-lg;
   }
 }

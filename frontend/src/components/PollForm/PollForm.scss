@@ -1,42 +1,35 @@
-@use '../../styles/tokens' as *;
+@use '../../styles' as *;
+
+$option-index-width: 28px;
 
 .poll-form {
-  @include card;
-  display: grid;
-  gap: $space-5;
-  padding: $space-5;
-
-  @include mobile {
-    padding: $space-4;
-  }
+  @include card($space-5, $space-4);
+  @include stack($space-5);
 
   &__field {
-    display: grid;
-    gap: $space-2;
+    @include stack($space-2);
   }
 
   &__options {
-    margin: 0;
-    padding: 0;
-    border: 0;
+    @include reset-fieldset;
   }
 
   &__label {
-    padding: 0;
     margin-bottom: $space-1;
-    font-weight: 700;
+    padding: 0;
+    font-weight: $font-weight-bold;
   }
 
   &__option {
     display: grid;
-    grid-template-columns: 28px 1fr auto;
+    grid-template-columns: $option-index-width 1fr auto;
     align-items: center;
     gap: $space-2;
   }
 
   &__option-index {
-    color: $color-muted;
-    font-weight: 700;
+    color: $color-text-muted;
+    font-weight: $font-weight-bold;
     text-align: center;
   }
 
@@ -48,18 +41,15 @@
   &__error {
     margin: 0;
     color: $color-danger;
-    font-size: 0.875rem;
+    font-size: $font-size-sm;
   }
 
   &__actions {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: $space-3;
+    @include flex($gap: $space-3, $wrap: wrap);
   }
 
   &__hint {
+    @include text-secondary;
     margin: 0;
-    font-size: 0.875rem;
   }
 }

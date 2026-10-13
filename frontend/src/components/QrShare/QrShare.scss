@@ -1,33 +1,32 @@
-@use '../../styles/tokens' as *;
+@use '../../styles' as *;
+
+$qr-body-min-width: 180px;
 
 .qr-share {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: $space-4;
+  @include flex($gap: $space-4, $wrap: wrap);
 
   &__code {
     flex-shrink: 0;
     border-radius: $radius-sm;
-    background: #fff;
+    // QR codes need a white quiet zone to scan reliably, whatever the theme.
+    background: $color-surface;
   }
 
   &__body {
-    display: grid;
-    flex: 1 1 180px;
+    @include stack($space-2);
+    flex: 1 1 $qr-body-min-width;
     justify-items: start;
-    gap: $space-2;
     min-width: 0;
   }
 
   &__title {
     margin: 0;
-    font-weight: 700;
+    font-weight: $font-weight-bold;
   }
 
   &__link {
+    @include break-words;
     max-width: 100%;
-    font-size: 0.875rem;
-    overflow-wrap: anywhere;
+    font-size: $font-size-sm;
   }
 }

@@ -1,17 +1,16 @@
-@use '../../styles/tokens' as *;
+@use '../../styles' as *;
 
 .not-found {
-  display: grid;
+  @include stack($space-3);
   justify-items: center;
-  gap: $space-3;
   padding: $space-6 0;
   text-align: center;
 
   &__code {
     margin: 0;
     color: $color-primary;
-    font-size: 4rem;
-    font-weight: 800;
-    line-height: 1;
+    font-size: $font-size-display;
+    font-weight: $font-weight-extrabold;
+    line-height: $line-height-none;
   }
 }

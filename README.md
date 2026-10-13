@@ -112,7 +112,7 @@ Ficou de fora, de propósito: votações de escolha múltipla e nuvem de palavra
 - **Ruff:** um só programa faz o lint e a formatação do Python, e é muito rápido. Por isso cabe num pre-commit sem atrasar os commits.
 - **React + TypeScript + Vite:** os tipos em [`frontend/src/api/types.ts`](frontend/src/api/types.ts) descrevem exatamente o contrato da API, por isso uma mudança no backend aparece como erro de compilação. O Vite dá um servidor de desenvolvimento rápido e o proxy para a API.
 - **Poucas dependências:** só `react-router-dom` (rotas) e `qrcode.react` (QR). Os dados são carregados com `fetch` e hooks próprios. Para dois ecrãs com pouco estado partilhado, TanStack Query ou Redux seriam engenharia a mais.
-- **SCSS simples:** cada componente tem a sua folha de estilos (BEM) e partilha tokens de [`styles/_tokens.scss`](frontend/src/styles/_tokens.scss). Não usei biblioteca de UI: a interface é pequena e assim o CSS fica todo explícito.
+- **SCSS simples:** cada componente tem a sua folha de estilos (BEM). Todas as cores, tamanhos e tempos vêm de variáveis partilhadas, e os padrões repetidos vêm de mixins (ver [Estilos](#estilos-variáveis-e-mixins)). Não usei biblioteca de UI: a interface é pequena e assim o CSS fica todo explícito.
 
 ### Duas apps Django, separadas por domínio
 
@@ -192,7 +192,7 @@ frontend/src/
 ├── App/            # rotas, caminhos (paths) e estilos globais
 ├── api/            # cliente HTTP, endpoints e tipos da API
 ├── lib/            # hooks partilhados (useResource, useEventSource), token, formatação
-├── styles/         # tokens SCSS partilhados
+├── styles/         # _variables.scss, _mixins.scss e _index.scss (design system)
 ├── components/     # Layout, PollCard, PollForm, ResultsChart, StatusBadge, Feedback,
 │                   # Countdown, LiveIndicator, QrShare, TimerSelect
 └── pages/          # PublicPollList, PublicPollDetail, HostDashboard,
@@ -200,6 +200,18 @@ frontend/src/
 ```
 
 Os imports usam a extensão explícita (`./X.ts` / `./X.tsx`) porque os dois ficheiros têm o mesmo nome base.
+
+### Estilos: variáveis e mixins
+
+Os estilos partilhados vivem em [`frontend/src/styles/`](frontend/src/styles/):
+
+| Ficheiro | Conteúdo |
+|---|---|
+| [`_variables.scss`](frontend/src/styles/_variables.scss) | Cores (marca, neutros, feedback e um mapa `$tones`), tipografia (família, escala de tamanhos `2xs`…`display`, pesos, alturas de linha), espaçamentos numa grelha de 4px (`$space-1` = 4px … `$space-6` = 32px), raios, alturas de controlos, larguras de layout, breakpoints, sombras, opacidades e tempos de animação |
+| [`_mixins.scss`](frontend/src/styles/_mixins.scss) | Responsivo (`mobile`, `below`, `reduced-motion`), layout (`flex`, `flex-between`, `stack`, `centered-column`, `reset-list`), superfícies (`card`, `empty-state`), cor (`tone`, `pill`, `dot`), texto (`text-secondary`, `eyebrow`, `break-words`), interação (`transition`, `hover-lift`, `focus-ring`, `checkable`) e botões (`button-base`, `button-variant`, `button-size`) |
+| [`_index.scss`](frontend/src/styles/_index.scss) | Reexporta os dois (`@forward`), para que cada componente só precise de `@use '../../styles' as *;` |
+
+Os componentes não têm cores nem medidas escritas à mão. As únicas exceções são 3 medidas de layout próprias de um componente (por exemplo, as colunas da tabela do painel), que ficam como variáveis locais no topo do respetivo `.scss`. O mixin `tone()` liga os estados às cores num só sítio: por exemplo, `StatusBadge.scss` mapeia `draft → warning`, `open → success` e `closed → neutral` e gera as três classes com um `@each`.
 
 A validação do formulário repete as regras do backend, para dar feedback imediato. Mesmo assim, o backend continua a ser a fonte de verdade e os erros que devolve são mostrados no campo certo.
 

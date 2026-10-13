@@ -1,0 +1,4 @@
+// Single entry point for the design system:
+//   @use '../../styles' as *;
+@forward 'variables';
+@forward 'mixins';

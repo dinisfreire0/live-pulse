@@ -1,49 +1,44 @@
-@use '../../styles/tokens' as *;
+@use '../../styles' as *;
 
 .results-chart {
   &__list {
-    display: grid;
-    gap: $space-4;
-    margin: 0;
-    padding: 0;
-    list-style: none;
+    @include reset-list;
+    @include stack($space-4);
   }
 
   &__labels {
-    display: flex;
-    justify-content: space-between;
-    gap: $space-3;
+    @include flex($align: baseline, $justify: space-between, $gap: $space-3);
     margin-bottom: $space-1;
   }
 
   &__text {
-    font-weight: 600;
-    overflow-wrap: anywhere;
+    @include break-words;
+    font-weight: $font-weight-semibold;
   }
 
   &__value {
-    font-variant-numeric: tabular-nums;
-    font-weight: 700;
+    @include tabular-nums;
+    font-weight: $font-weight-bold;
     white-space: nowrap;
   }
 
   &__votes {
-    color: $color-muted;
-    font-weight: 400;
+    color: $color-text-muted;
+    font-weight: $font-weight-regular;
   }
 
   &__track {
-    height: 12px;
+    height: $progress-height;
     overflow: hidden;
     border-radius: $radius-pill;
-    background: #ecebf1;
+    background: $color-surface-muted;
   }
 
   &__bar {
     height: 100%;
     border-radius: inherit;
-    background: rgba($color-primary, 0.45);
-    transition: width 0.4s ease;
+    background: rgba($color-primary, $alpha-bar);
+    transition: width $duration-slow $easing-standard;
   }
 
   &__row--leading &__bar {
@@ -52,12 +47,6 @@
 
   &__total {
     margin: $space-4 0 0;
-    color: $color-muted;
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .results-chart__bar {
-    transition: none;
+    color: $color-text-muted;
   }
 }

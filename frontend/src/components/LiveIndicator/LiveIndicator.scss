@@ -1,25 +1,20 @@
-@use '../../styles/tokens' as *;
+@use '../../styles' as *;
 
 .live-indicator {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  color: $color-muted;
-  font-size: 0.8125rem;
-  font-weight: 600;
+  @include inline-flex-center($space-1-5);
+  color: $color-text-muted;
+  font-size: $font-size-xs;
+  font-weight: $font-weight-semibold;
 
   &__dot {
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
-    background: currentColor;
+    @include dot($dot-size-md);
   }
 
   &--live {
     color: $color-success;
 
     .live-indicator__dot {
-      animation: live-blink 1.6s ease-in-out infinite;
+      animation: live-blink $duration-blink $easing-smooth infinite;
     }
   }
 
@@ -30,12 +25,6 @@
 
 @keyframes live-blink {
   50% {
-    opacity: 0.3;
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .live-indicator__dot {
-    animation: none !important;
+    opacity: $opacity-faint;
   }
 }

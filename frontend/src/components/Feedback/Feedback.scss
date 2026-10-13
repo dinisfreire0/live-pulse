@@ -1,31 +1,22 @@
-@use '../../styles/tokens' as *;
+@use '../../styles' as *;
+
+// Feedback kind (from Feedback.ts) → color tone.
+$feedback-tones: (
+  success: success,
+  error: danger,
+  info: info,
+);
 
 .feedback {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
-  gap: $space-3;
+  @include flex-between($space-3);
   padding: $space-3 $space-4;
-  border: 1px solid transparent;
+  border: $border-width solid transparent;
   border-radius: $radius-sm;
-  font-weight: 500;
+  font-weight: $font-weight-medium;
 
-  &--success {
-    background: $color-success-soft;
-    border-color: rgba($color-success, 0.25);
-    color: $color-success;
-  }
-
-  &--error {
-    background: $color-danger-soft;
-    border-color: rgba($color-danger, 0.25);
-    color: $color-danger;
-  }
-
-  &--info {
-    background: $color-primary-soft;
-    border-color: rgba($color-primary, 0.2);
-    color: $color-primary-dark;
+  @each $kind, $tone in $feedback-tones {
+    &--#{$kind} {
+      @include tone($tone, $bordered: true);
+    }
   }
 }

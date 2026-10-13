@@ -1,18 +1,11 @@
-@use '../../styles/tokens' as *;
+@use '../../styles' as *;
 
 .countdown {
-  display: inline-flex;
-  align-items: center;
-  gap: $space-1;
-  padding: 2px 10px;
-  border-radius: $radius-pill;
-  background: $color-primary-soft;
-  color: $color-primary-dark;
-  font-size: 0.875rem;
-  font-variant-numeric: tabular-nums;
+  @include pill;
+  @include tone(info);
+  @include tabular-nums;
 
   &--urgent {
-    background: $color-danger-soft;
-    color: $color-danger;
+    @include tone(danger);
   }
 }

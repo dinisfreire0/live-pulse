@@ -1,5 +1,6 @@
-// Global base styles. Component styles live next to each component.
-@use '../styles/tokens' as *;
+// Global base styles and shared utility classes.
+// Component styles live next to each component.
+@use '../styles' as *;
 
 *,
 *::before,
@@ -16,21 +17,20 @@ body {
   min-height: 100vh;
   background: $color-bg;
   color: $color-text;
-  font-family:
-    system-ui,
-    -apple-system,
-    'Segoe UI',
-    Roboto,
-    sans-serif;
-  font-size: 16px;
-  line-height: 1.5;
+  font-family: $font-family-base;
+  font-size: $font-size-root;
+  line-height: $line-height-base;
 }
 
 h1,
 h2,
 h3 {
   margin: 0;
-  line-height: 1.25;
+  line-height: $line-height-heading;
+}
+
+h1 {
+  font-size: $font-size-3xl;
 }
 
 a {
@@ -44,78 +44,50 @@ select {
 }
 
 :focus-visible {
-  outline: 2px solid $color-primary;
-  outline-offset: 2px;
+  outline: $outline-width solid $color-primary;
+  outline-offset: $outline-offset;
 }
 
+// Respect the OS "reduce motion" setting everywhere (pulses, bars, hovers).
+@include reduced-motion {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+// Utilities -------------------------------------------------------------------
+
 .btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: $space-2;
-  min-height: 40px;
-  padding: $space-2 $space-4;
-  border: 1px solid $color-border;
-  border-radius: $radius-sm;
-  background: $color-surface;
-  color: $color-text;
-  font-weight: 600;
-  text-decoration: none;
-  cursor: pointer;
-  transition:
-    background 0.15s,
-    border-color 0.15s;
-
-  &:hover:not(:disabled) {
-    border-color: $color-primary;
-  }
-
-  &:disabled {
-    opacity: 0.55;
-    cursor: not-allowed;
-  }
+  @include button-base;
 
   &--primary {
-    background: $color-primary;
-    border-color: $color-primary;
-    color: #fff;
-
-    &:hover:not(:disabled) {
-      background: $color-primary-dark;
-    }
+    @include button-variant($color-primary, $color-primary-dark);
   }
 
   &--danger {
-    background: $color-danger;
-    border-color: $color-danger;
-    color: #fff;
-
-    &:hover:not(:disabled) {
-      border-color: $color-danger;
-      filter: brightness(0.92);
-    }
+    @include button-variant($color-danger, $color-danger-dark);
   }
 
   &--small {
-    min-height: 32px;
-    padding: $space-1 $space-3;
-    font-size: 0.875rem;
+    @include button-size($control-height-sm, $space-1, $space-3, $font-size-sm);
   }
 }
 
 .input {
   width: 100%;
-  min-height: 44px;
+  min-height: $control-height-lg;
   padding: $space-2 $space-3;
-  border: 1px solid $color-border;
+  border: $border-width solid $color-border;
   border-radius: $radius-sm;
   background: $color-surface;
   color: $color-text;
 
   &:focus {
-    border-color: $color-primary;
-    outline: none;
-    box-shadow: 0 0 0 3px $color-primary-soft;
+    @include focus-ring;
   }
 
   &--invalid {
@@ -124,25 +96,18 @@ select {
 }
 
 .page-header {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
-  gap: $space-3;
+  @include flex-between($space-3);
   margin-bottom: $space-5;
 
   &__actions {
-    display: flex;
-    flex-wrap: wrap;
-    gap: $space-2;
+    @include flex($gap: $space-2, $wrap: wrap);
   }
 }
 
 .back-link {
+  @include text-secondary;
   display: inline-block;
   margin-bottom: $space-3;
-  color: $color-muted;
-  font-size: 0.875rem;
   text-decoration: none;
 
   &:hover {
@@ -151,5 +116,5 @@ select {
 }
 
 .muted {
-  color: $color-muted;
+  color: $color-text-muted;
 }

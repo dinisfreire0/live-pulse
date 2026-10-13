@@ -1,18 +1,17 @@
-@use '../../styles/tokens' as *;
+@use '../../styles' as *;
 
 .layout {
   &__header {
     position: sticky;
     top: 0;
-    z-index: 10;
+    z-index: $z-index-header;
+    border-bottom: $border-width solid $color-border;
     background: $color-surface;
-    border-bottom: 1px solid $color-border;
   }
 
   &__inner,
   &__main {
-    max-width: 960px;
-    margin: 0 auto;
+    @include centered-column($container-max-width);
     padding: 0 $space-5;
 
     @include mobile {
@@ -21,10 +20,8 @@
   }
 
   &__inner {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    height: 60px;
+    @include flex($justify: space-between);
+    height: $header-height;
   }
 
   &__main {
@@ -37,34 +34,28 @@
   }
 
   &__brand {
-    display: flex;
-    align-items: center;
-    gap: $space-2;
+    @include flex($gap: $space-2);
     color: $color-text;
-    font-size: 1.125rem;
-    font-weight: 800;
+    font-size: $font-size-lg;
+    font-weight: $font-weight-extrabold;
     text-decoration: none;
   }
 
   &__pulse {
-    width: 10px;
-    height: 10px;
-    border-radius: 50%;
-    background: $color-primary;
-    box-shadow: 0 0 0 0 rgba($color-primary, 0.5);
-    animation: layout-pulse 2s infinite;
+    @include dot($dot-size-lg, $color-primary);
+    box-shadow: 0 0 0 0 rgba($color-primary, $alpha-hover-border);
+    animation: layout-pulse $duration-pulse infinite;
   }
 
   &__nav {
-    display: flex;
-    gap: $space-1;
+    @include flex($gap: $space-1);
   }
 
   &__link {
     padding: $space-2 $space-3;
     border-radius: $radius-sm;
-    color: $color-muted;
-    font-weight: 600;
+    color: $color-text-muted;
+    font-weight: $font-weight-semibold;
     text-decoration: none;
 
     &:hover {
@@ -80,15 +71,10 @@
 
 @keyframes layout-pulse {
   70% {
-    box-shadow: 0 0 0 8px rgba($color-primary, 0);
+    box-shadow: 0 0 0 $space-2 rgba($color-primary, 0);
   }
+
   100% {
     box-shadow: 0 0 0 0 rgba($color-primary, 0);
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .layout__pulse {
-    animation: none;
   }
 }
