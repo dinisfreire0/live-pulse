@@ -1,9 +1,10 @@
 from django.db.models import Count
-from django.shortcuts import get_object_or_404
 from django.views.decorators.http import require_GET
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
+
+from votes.services import has_voted
 
 from . import services
 from .models import Poll
@@ -14,25 +15,10 @@ from .serializers import (
     PollUpdateSerializer,
     PublicPollDetailSerializer,
     PublicPollListSerializer,
-    VoteCreateSerializer,
-    VoteReceiptSerializer,
 )
 from .sse import poll_snapshots, sse_response
 
 VOTER_TOKEN_HEADER = "X-Voter-Token"
-
-
-def get_host_poll(pk):
-    Poll.objects.close_expired()
-    return get_object_or_404(Poll.objects.prefetch_related("options"), pk=pk)
-
-
-def get_public_poll(pk):
-    """Drafts do not exist as far as the audience is concerned (404)."""
-    Poll.objects.close_expired()
-    return get_object_or_404(
-        Poll.objects.visible_to_public().prefetch_related("options"), pk=pk
-    )
 
 
 # --- Host -------------------------------------------------------------------
@@ -54,10 +40,10 @@ class HostPollListView(APIView):
 
 class HostPollDetailView(APIView):
     def get(self, request, pk):
-        return Response(HostPollDetailSerializer(get_host_poll(pk)).data)
+        return Response(HostPollDetailSerializer(services.get_host_poll(pk)).data)
 
     def patch(self, request, pk):
-        poll = get_host_poll(pk)
+        poll = services.get_host_poll(pk)
         serializer = PollUpdateSerializer(poll, data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)
         services.update_poll(poll, **serializer.validated_data)
@@ -66,15 +52,13 @@ class HostPollDetailView(APIView):
 
 class HostPollResultsView(APIView):
     def get(self, request, pk):
-        return Response(services.get_results(get_host_poll(pk)))
+        return Response(services.get_results(services.get_host_poll(pk)))
 
 
 @require_GET
 def host_poll_stream(request, pk):
-    get_host_poll(pk)
-    return sse_response(
-        poll_snapshots(pk, lambda poll: HostPollDetailSerializer(poll).data)
-    )
+    services.get_host_poll(pk)
+    return sse_response(poll_snapshots(pk, lambda poll: HostPollDetailSerializer(poll).data))
 
 
 # --- Public -----------------------------------------------------------------
@@ -89,15 +73,15 @@ class PublicPollListView(APIView):
 
 class PublicPollDetailView(APIView):
     def get(self, request, pk):
-        poll = get_public_poll(pk)
+        poll = services.get_public_poll(pk)
         data = PublicPollDetailSerializer(poll).data
-        data["has_voted"] = services.has_voted(poll, request.headers.get(VOTER_TOKEN_HEADER))
+        data["has_voted"] = has_voted(poll, request.headers.get(VOTER_TOKEN_HEADER))
         return Response(data)
 
 
 class PublicPollResultsView(APIView):
     def get(self, request, pk):
-        poll = get_public_poll(pk)
+        poll = services.get_public_poll(pk)
         if not poll.results_are_public:
             return Response(
                 {"detail": "Os resultados só ficam disponíveis quando a votação fechar."},
@@ -106,35 +90,7 @@ class PublicPollResultsView(APIView):
         return Response(services.get_results(poll))
 
 
-class VoteCreateView(APIView):
-    def post(self, request, pk):
-        poll = get_public_poll(pk)
-        serializer = VoteCreateSerializer(data=request.data, context={"poll": poll})
-        serializer.is_valid(raise_exception=True)
-        try:
-            vote = services.cast_vote(
-                poll,
-                serializer.validated_data["option_id"],
-                serializer.validated_data["voter_token"],
-            )
-        except services.PollNotOpen:
-            return Response(
-                {"detail": "Esta votação não está aberta a votos."},
-                status=status.HTTP_409_CONFLICT,
-            )
-        except services.AlreadyVoted:
-            return Response(
-                {"detail": "Já votaste nesta votação."},
-                status=status.HTTP_409_CONFLICT,
-            )
-        receipt = VoteReceiptSerializer(vote).data
-        receipt["detail"] = "Obrigado, o teu voto foi registado!"
-        return Response(receipt, status=status.HTTP_201_CREATED)
-
-
 @require_GET
 def public_poll_stream(request, pk):
-    get_public_poll(pk)
-    return sse_response(
-        poll_snapshots(pk, lambda poll: PublicPollDetailSerializer(poll).data)
-    )
+    services.get_public_poll(pk)
+    return sse_response(poll_snapshots(pk, lambda poll: PublicPollDetailSerializer(poll).data))

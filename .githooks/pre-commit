@@ -1,0 +1,22 @@
+#!/bin/sh
+# Lints the code before each commit. Enable once per clone with:
+#   git config core.hooksPath .githooks
+set -e
+
+ROOT=$(git rev-parse --show-toplevel)
+
+# Prefer the project's virtualenv (macOS/Linux or Windows layout), then a global ruff.
+RUFF=ruff
+for candidate in "$ROOT/backend/.venv/bin/ruff" "$ROOT/backend/.venv/Scripts/ruff.exe"; do
+  if [ -x "$candidate" ]; then RUFF=$candidate; fi
+done
+
+echo "pre-commit: ruff (backend)"
+(cd "$ROOT/backend" && "$RUFF" check . && "$RUFF" format --check .)
+
+echo "pre-commit: oxlint (frontend)"
+if [ -d "$ROOT/frontend/node_modules" ]; then
+  (cd "$ROOT/frontend" && npm run --silent lint)
+else
+  echo "  frontend/node_modules not found, run 'npm install' in frontend/ to lint it."
+fi

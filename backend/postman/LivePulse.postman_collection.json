@@ -1,0 +1,1201 @@
+{
+  "info": {
+    "name": "Live Pulse API",
+    "description": "API REST do Live Pulse.\n\nCorre a pasta **Fluxo completo** de uma ponta à outra (Run collection / `newman`) para ver o ciclo de vida de uma votação: criar → abrir → votar → fechar → resultados.\n\nAs pastas **Anfitrião** e **Público** têm cada endpoint individualmente. Variáveis: `baseUrl`, `pollId` e `optionId` (preenchidas ao criar uma votação) e `voterToken`.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Fluxo completo",
+      "item": [
+        {
+          "name": "Criar votação",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/host/polls/",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "host",
+                "polls",
+                ""
+              ]
+            },
+            "description": "Cria uma votação em Rascunho (2 a 5 opções). Guarda `pollId` e `optionId` nas variáveis da coleção.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"question\": \"Qual o tema da próxima sessão?\",\n  \"options\": [\n    \"Django\",\n    \"React\",\n    \"Docker\"\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 201\", () => pm.response.to.have.status(201));",
+                  "const poll = pm.response.json();",
+                  "pm.test(\"Começa em Rascunho\", () => pm.expect(poll.status).to.eql(\"draft\"));",
+                  "pm.collectionVariables.set(\"pollId\", poll.id);",
+                  "pm.collectionVariables.set(\"optionId\", poll.options[0].id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Criar votação (inválida)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/host/polls/",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "host",
+                "polls",
+                ""
+              ]
+            },
+            "description": "Exemplo de validação: pergunta vazia e menos de 2 opções.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"question\": \"\",\n  \"options\": [\n    \"Só uma\"\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 400\", () => pm.response.to.have.status(400));",
+                  "const errors = pm.response.json();",
+                  "pm.test(\"Erros por campo\", () => pm.expect(errors).to.have.keys(\"question\", \"options\"));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Abrir votação",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/host/polls/{{pollId}}/",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "host",
+                "polls",
+                "{{pollId}}",
+                ""
+              ]
+            },
+            "description": "Rascunho → Aberta. Opcionalmente com `duration_seconds` para fechar automaticamente.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"open\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Aberta\", () => pm.expect(pm.response.json().status).to.eql(\"open\"));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Listar votações",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/polls/",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "polls",
+                ""
+              ]
+            },
+            "description": "Só votações Abertas e Fechadas (rascunhos nunca aparecem)."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Detalhe da votação",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-Voter-Token",
+                "value": "{{voterToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/polls/{{pollId}}/",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "polls",
+                "{{pollId}}",
+                ""
+              ]
+            },
+            "description": "`results` é `null` enquanto a votação está aberta (salvo resultados em direto). `has_voted` usa o header `X-Voter-Token`."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Votar",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/polls/{{pollId}}/votes/",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "polls",
+                "{{pollId}}",
+                "votes",
+                ""
+              ]
+            },
+            "description": "Regista um voto. Respostas: 400 (opção inválida), 404 (rascunho), 409 (já votou ou votação não aberta).",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"option_id\": {{optionId}},\n  \"voter_token\": \"{{voterToken}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 201\", () => pm.response.to.have.status(201));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Votar outra vez (recusado)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/polls/{{pollId}}/votes/",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "polls",
+                "{{pollId}}",
+                "votes",
+                ""
+              ]
+            },
+            "description": "O mesmo `voter_token` não pode votar duas vezes na mesma votação.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"option_id\": {{optionId}},\n  \"voter_token\": \"{{voterToken}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 409\", () => pm.response.to.have.status(409));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Resultados (votação aberta)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/polls/{{pollId}}/results/",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "polls",
+                "{{pollId}}",
+                "results",
+                ""
+              ]
+            },
+            "description": "403 enquanto a votação está aberta e o anfitrião não ligou os resultados em direto."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 403\", () => pm.response.to.have.status(403));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Resultados",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/host/polls/{{pollId}}/results/",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "host",
+                "polls",
+                "{{pollId}}",
+                "results",
+                ""
+              ]
+            },
+            "description": "Disponíveis para o anfitrião a qualquer momento."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Fechar votação",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/host/polls/{{pollId}}/",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "host",
+                "polls",
+                "{{pollId}}",
+                ""
+              ]
+            },
+            "description": "Aberta → Fechada. Não é possível voltar atrás.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"closed\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Mudança de estado inválida",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/host/polls/{{pollId}}/",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "host",
+                "polls",
+                "{{pollId}}",
+                ""
+              ]
+            },
+            "description": "Fechada → Aberta é recusado: o estado só avança.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"open\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 400\", () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Resultados finais (público)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/polls/{{pollId}}/results/",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "polls",
+                "{{pollId}}",
+                "results",
+                ""
+              ]
+            },
+            "description": "Depois de fechada, os resultados são públicos."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "const results = pm.response.json();",
+                  "pm.test(\"1 voto contado\", () => pm.expect(results.total_votes).to.eql(1));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Anfitrião",
+      "item": [
+        {
+          "name": "Criar votação",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/host/polls/",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "host",
+                "polls",
+                ""
+              ]
+            },
+            "description": "Cria uma votação em Rascunho (2 a 5 opções). Guarda `pollId` e `optionId` nas variáveis da coleção.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"question\": \"Qual o tema da próxima sessão?\",\n  \"options\": [\n    \"Django\",\n    \"React\",\n    \"Docker\"\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 201\", () => pm.response.to.have.status(201));",
+                  "const poll = pm.response.json();",
+                  "pm.test(\"Começa em Rascunho\", () => pm.expect(poll.status).to.eql(\"draft\"));",
+                  "pm.collectionVariables.set(\"pollId\", poll.id);",
+                  "pm.collectionVariables.set(\"optionId\", poll.options[0].id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Criar votação (inválida)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/host/polls/",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "host",
+                "polls",
+                ""
+              ]
+            },
+            "description": "Exemplo de validação: pergunta vazia e menos de 2 opções.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"question\": \"\",\n  \"options\": [\n    \"Só uma\"\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 400\", () => pm.response.to.have.status(400));",
+                  "const errors = pm.response.json();",
+                  "pm.test(\"Erros por campo\", () => pm.expect(errors).to.have.keys(\"question\", \"options\"));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Listar votações",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/host/polls/",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "host",
+                "polls",
+                ""
+              ]
+            },
+            "description": "Todas as votações (incluindo rascunhos), com `total_votes`."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Detalhe da votação",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/host/polls/{{pollId}}/",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "host",
+                "polls",
+                "{{pollId}}",
+                ""
+              ]
+            },
+            "description": "Inclui sempre os resultados."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Abrir votação",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/host/polls/{{pollId}}/",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "host",
+                "polls",
+                "{{pollId}}",
+                ""
+              ]
+            },
+            "description": "Rascunho → Aberta. Opcionalmente com `duration_seconds` para fechar automaticamente.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"open\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Aberta\", () => pm.expect(pm.response.json().status).to.eql(\"open\"));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Definir temporizador",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/host/polls/{{pollId}}/",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "host",
+                "polls",
+                "{{pollId}}",
+                ""
+              ]
+            },
+            "description": "Só em votações abertas. A votação fecha sozinha quando `closes_at` passa.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"duration_seconds\": 300\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Tem closes_at\", () => pm.expect(pm.response.json().closes_at).to.be.a(\"string\"));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Mostrar resultados em direto",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/host/polls/{{pollId}}/",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "host",
+                "polls",
+                "{{pollId}}",
+                ""
+              ]
+            },
+            "description": "Permite ao público ver os resultados enquanto a votação está aberta.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"show_live_results\": true\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Resultados",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/host/polls/{{pollId}}/results/",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "host",
+                "polls",
+                "{{pollId}}",
+                "results",
+                ""
+              ]
+            },
+            "description": "Disponíveis para o anfitrião a qualquer momento."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Fechar votação",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/host/polls/{{pollId}}/",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "host",
+                "polls",
+                "{{pollId}}",
+                ""
+              ]
+            },
+            "description": "Aberta → Fechada. Não é possível voltar atrás.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"closed\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Mudança de estado inválida",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/host/polls/{{pollId}}/",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "host",
+                "polls",
+                "{{pollId}}",
+                ""
+              ]
+            },
+            "description": "Fechada → Aberta é recusado: o estado só avança.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"open\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 400\", () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Stream em direto (SSE)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "text/event-stream"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/host/polls/{{pollId}}/stream/",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "host",
+                "polls",
+                "{{pollId}}",
+                "stream",
+                ""
+              ]
+            },
+            "description": "Server-Sent Events: envia um snapshot da votação sempre que algo muda. Só faz sentido com a votação aberta; no Postman, abre e deixa a correr."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Público",
+      "item": [
+        {
+          "name": "Listar votações",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/polls/",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "polls",
+                ""
+              ]
+            },
+            "description": "Só votações Abertas e Fechadas (rascunhos nunca aparecem)."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Detalhe da votação",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-Voter-Token",
+                "value": "{{voterToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/polls/{{pollId}}/",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "polls",
+                "{{pollId}}",
+                ""
+              ]
+            },
+            "description": "`results` é `null` enquanto a votação está aberta (salvo resultados em direto). `has_voted` usa o header `X-Voter-Token`."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Votar",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/polls/{{pollId}}/votes/",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "polls",
+                "{{pollId}}",
+                "votes",
+                ""
+              ]
+            },
+            "description": "Regista um voto. Respostas: 400 (opção inválida), 404 (rascunho), 409 (já votou ou votação não aberta).",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"option_id\": {{optionId}},\n  \"voter_token\": \"{{voterToken}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 201\", () => pm.response.to.have.status(201));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Votar outra vez (recusado)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/polls/{{pollId}}/votes/",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "polls",
+                "{{pollId}}",
+                "votes",
+                ""
+              ]
+            },
+            "description": "O mesmo `voter_token` não pode votar duas vezes na mesma votação.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"option_id\": {{optionId}},\n  \"voter_token\": \"{{voterToken}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 409\", () => pm.response.to.have.status(409));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Resultados (votação aberta)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/polls/{{pollId}}/results/",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "polls",
+                "{{pollId}}",
+                "results",
+                ""
+              ]
+            },
+            "description": "403 enquanto a votação está aberta e o anfitrião não ligou os resultados em direto."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 403\", () => pm.response.to.have.status(403));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Stream em direto (SSE)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "text/event-stream"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/polls/{{pollId}}/stream/",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "polls",
+                "{{pollId}}",
+                "stream",
+                ""
+              ]
+            },
+            "description": "Server-Sent Events para o público: muda para os resultados assim que a votação fecha."
+          }
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8000"
+    },
+    {
+      "key": "pollId",
+      "value": ""
+    },
+    {
+      "key": "optionId",
+      "value": ""
+    },
+    {
+      "key": "voterToken",
+      "value": "postman-voter-0001"
+    }
+  ]
+}

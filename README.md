@@ -9,15 +9,40 @@ Aplicação full-stack para votações em direto num evento. Tem duas interfaces
 
 ---
 
+## Estrutura do repositório
+
+```
+jek/
+├── .githooks/               # pre-commit: ruff + oxlint antes de cada commit
+├── .github/workflows/       # CI: lint, testes e build em cada push / PR
+├── backend/
+│   ├── backend/             # projeto Django: settings, urls, asgi, wsgi
+│   ├── polls/               # app: votações, opções, resultados e streams SSE
+│   ├── votes/               # app: votos e regra "um voto por pessoa"
+│   ├── postman/             # coleção Postman com todos os endpoints
+│   ├── .env.example         # variáveis de ambiente (copiar para .env)
+│   ├── docker-compose.yml   # sobe backend + frontend
+│   ├── Dockerfile
+│   ├── manage.py
+│   ├── pyproject.toml       # configuração do ruff
+│   ├── requirements.txt
+│   └── requirements-dev.txt
+├── frontend/                # React + TypeScript + Vite (ver "Estrutura do frontend")
+└── README.md
+```
+
+---
+
 ## Como correr
 
 ### Opção A: Docker (um único comando)
 
 ```bash
+cd backend
 docker compose up --build
 ```
 
-Depois abre **http://localhost:5173**. A base de dados SQLite fica num volume do Docker.
+Depois abre **http://localhost:5173**. A base de dados SQLite fica num volume do Docker. O `.env` é opcional: se existir em `backend/`, o compose usa-o.
 
 ### Opção B: localmente
 
@@ -26,9 +51,10 @@ Requisitos: Python 3.11+ e Node 20+.
 ```bash
 # Terminal 1: backend (http://127.0.0.1:8000)
 cd backend
+cp .env.example .env               # opcional: os valores por omissão servem para desenvolvimento
 python3 -m venv .venv
-source .venv/bin/activate        # Windows: .venv\Scripts\activate
-pip install -r requirements.txt
+source .venv/bin/activate          # Windows: .venv\Scripts\activate
+pip install -r requirements-dev.txt
 python manage.py migrate
 python manage.py runserver
 ```
@@ -42,12 +68,20 @@ npm run dev
 
 Abre **http://localhost:5173**. O Vite reencaminha `/api` para o Django, por isso não é preciso configurar CORS.
 
-### Testes
+### Testes e qualidade de código
 
 ```bash
-cd backend && python manage.py test polls     # 15 testes da API
-cd frontend && npm run lint && npm run build  # lint + verificação de tipos
+cd backend
+python manage.py test                # 16 testes da API (apps polls e votes)
+ruff check . && ruff format --check  # lint + formatação
+
+cd frontend
+npm run lint && npm run build        # oxlint + verificação de tipos
 ```
+
+- **Git hooks:** ativa uma vez por clone com `git config core.hooksPath .githooks`. A partir daí, cada commit corre o ruff e o oxlint e é bloqueado se falharem.
+- **CI:** [`.github/workflows/ci.yml`](.github/workflows/ci.yml) corre os mesmos passos no GitHub Actions em cada push para `main` e em cada pull request.
+- **Postman:** importa [`backend/postman/LivePulse.postman_collection.json`](backend/postman/LivePulse.postman_collection.json). A pasta **Fluxo completo** percorre o ciclo de vida de uma votação (criar → abrir → votar → fechar → resultados) com asserções em cada passo. Também corre no terminal com `npx newman run backend/postman/LivePulse.postman_collection.json --folder "Fluxo completo"`, com o backend ligado.
 
 ### Votar a partir do telemóvel
 
@@ -74,22 +108,33 @@ Ficou de fora, de propósito: votações de escolha múltipla e nuvem de palavra
 
 - **Django + DRF:** é a stack recomendada. O ORM, as migrações e o admin vêm incluídos. Os serializers do DRF tratam da validação e das mensagens de erro de forma declarativa, e as views ficam curtas.
 - **SQLite:** zero configuração e suficiente para um evento. Mudar para PostgreSQL é só mudar `DATABASES`.
+- **Configuração por `.env`:** o `settings.py` lê `backend/.env` com `python-dotenv` (chave secreta, `DEBUG`, hosts, caminho da base de dados). O `.env` não vai para o Git. O `.env.example` documenta as variáveis.
+- **Ruff:** um só programa faz o lint e a formatação do Python, e é muito rápido. Por isso cabe num pre-commit sem atrasar os commits.
 - **React + TypeScript + Vite:** os tipos em [`frontend/src/api/types.ts`](frontend/src/api/types.ts) descrevem exatamente o contrato da API, por isso uma mudança no backend aparece como erro de compilação. O Vite dá um servidor de desenvolvimento rápido e o proxy para a API.
 - **Poucas dependências:** só `react-router-dom` (rotas) e `qrcode.react` (QR). Os dados são carregados com `fetch` e hooks próprios. Para dois ecrãs com pouco estado partilhado, TanStack Query ou Redux seriam engenharia a mais.
 - **SCSS simples:** cada componente tem a sua folha de estilos (BEM) e partilha tokens de [`styles/_tokens.scss`](frontend/src/styles/_tokens.scss). Não usei biblioteca de UI: a interface é pequena e assim o CSS fica todo explícito.
 
+### Duas apps Django, separadas por domínio
+
+- **`polls`:** votações e opções, as regras de estado, os resultados (calculados) e os streams SSE. É a parte do anfitrião e da leitura pública.
+- **`votes`:** o modelo `Vote`, o serviço que regista um voto e o endpoint `POST /api/polls/{id}/votes/`.
+
+A dependência é só num sentido nos modelos (`Vote` aponta para `Poll` e `Option`). Cada app tem os seus `models`, `serializers`, `services`, `views`, `urls`, `admin` e `tests`. As views ficam finas e a lógica de negócio vive em `services.py`.
+
+Não há `celery.py`: o único trabalho "em segundo plano" é o temporizador, que se resolve sem worker nem Redis (ver [Temporizador](#temporizador)).
+
 ### Modelo de dados
 
 ```
-Poll (question, status, show_live_results, closes_at, created_at, updated_at)
- ├── Option (poll → Poll, text, position)           UNIQUE(poll, position)
- └── Vote   (poll → Poll, option → Option,
-             voter_token, created_at)               UNIQUE(poll, voter_token)
+polls.Poll   (question, status, show_live_results, closes_at, created_at, updated_at)
+ ├── polls.Option (poll → Poll, text, position)          UNIQUE(poll, position)
+ └── votes.Vote   (poll → Poll, option → Option,
+                   voter_token, created_at)              UNIQUE(poll, voter_token)
 ```
 
 - `status` é um `TextChoices` (`draft` / `open` / `closed`). As transições permitidas estão definidas no modelo (`Poll.ALLOWED_TRANSITIONS`) e só andam para a frente.
 - Os resultados **não são guardados**: são calculados com `COUNT` sobre `Vote`, por isso nunca ficam dessincronizados.
-- **Onde fica o "um voto por pessoa":** na tabela `Vote`, com a restrição `UNIQUE(poll, voter_token)`. Por isso `Vote` guarda também `poll`, embora isso se possa deduzir a partir de `option`. É uma desnormalização deliberada: permite à **base de dados** garantir a regra, mesmo com dois pedidos em simultâneo (o `IntegrityError` passa a `409`). O serviço confirma sempre que a opção pertence à votação.
+- **Onde fica o "um voto por pessoa":** na tabela `Vote`, com a restrição `UNIQUE(poll, voter_token)`. Por isso `Vote` guarda também `poll`, embora isso se possa deduzir a partir de `option`. É uma desnormalização deliberada: permite à **base de dados** garantir a regra, mesmo com dois pedidos em simultâneo (o `IntegrityError` passa a `409`). O serializer confirma sempre que a opção pertence à votação.
 
 ### API REST
 
@@ -112,7 +157,7 @@ Os erros seguem o formato do DRF: `{"detail": "..."}` ou `{"campo": ["mensagem"]
 ### Tempo real: porquê Server-Sent Events
 
 - **Direção dos dados:** os votos chegam por um `POST` normal. O que precisa de tempo real vai só **do servidor para o browser**, e é exatamente para isso que serve o SSE. WebSockets são bidirecionais, o que aqui não é necessário. Além disso, em Django obrigam a usar Channels, ASGI e normalmente Redis.
-- **Complexidade:** do lado do cliente basta o `EventSource` nativo, que volta a ligar-se sozinho ([`useEventSource.ts`](frontend/src/lib/useEventSource.ts)). Do lado do servidor é um `StreamingHttpResponse` ([`polls/sse.py`](backend/polls/sse.py)).
+- **Complexidade:** do lado do cliente basta o `EventSource` nativo, que volta a ligar-se sozinho ([`useEventSource.ts`](frontend/src/lib/useEventSource.ts)). Do lado do servidor é um `StreamingHttpResponse` ([`backend/polls/sse.py`](backend/polls/sse.py)).
 - **Como funciona:** cada stream verifica a votação uma vez por segundo, com uma assinatura barata `(status, show_live_results, closes_at, nº de votos)`, e só envia um snapshot completo quando algo muda. Envia um heartbeat a cada 15 s. As ligações fecham ao fim de 5 min e o browser volta a ligar-se de forma transparente.
 - **Escalabilidade (o compromisso):** cada ligação aberta ocupa uma thread do servidor e faz uma query leve por segundo. Para uma sala com dezenas ou centenas de pessoas isto chega perfeitamente. Para milhares, o passo seguinte seria um servidor ASGI com views assíncronas e pub/sub (Redis / `LISTEN/NOTIFY` do PostgreSQL), que notifica no momento do voto em vez de verificar periodicamente.
 - Só há streams enquanto a votação está **aberta**: em rascunho ou fechada, nada muda.
@@ -174,4 +219,4 @@ A validação do formulário repete as regras do backend, para dar feedback imed
 - **Testes de frontend** (Vitest + Testing Library para os hooks, Playwright para o fluxo completo). O fluxo completo foi validado manualmente num browser headless.
 - Editar e apagar votações em rascunho, e duplicar votações.
 - Escolha múltipla e nuvem de palavras.
-- Configuração de produção: `gunicorn` com workers de threads, servir o build estático do Vite e `DEBUG=0` com uma `SECRET_KEY` verdadeira (já se podem definir por variáveis de ambiente).
+- Configuração de produção: `gunicorn` com workers de threads, servir o build estático do Vite e `DEBUG=0` com uma `SECRET_KEY` verdadeira (já se podem definir no `.env`).

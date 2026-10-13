@@ -6,7 +6,6 @@ urlpatterns = [
     # Audience
     path("polls/", views.PublicPollListView.as_view(), name="poll-list"),
     path("polls/<int:pk>/", views.PublicPollDetailView.as_view(), name="poll-detail"),
-    path("polls/<int:pk>/votes/", views.VoteCreateView.as_view(), name="poll-votes"),
     path("polls/<int:pk>/results/", views.PublicPollResultsView.as_view(), name="poll-results"),
     path("polls/<int:pk>/stream/", views.public_poll_stream, name="poll-stream"),
     # Host

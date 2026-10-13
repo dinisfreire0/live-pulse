@@ -1,18 +1,8 @@
-# Python
-__pycache__/
-*.pyc
-.venv/
-db.sqlite3
-backend/data/
-
-# Node
-node_modules/
-dist/
-
-# Misc
+# OS / editors
 .DS_Store
-.env
-.env.local
+.idea/
 .vscode/*
 !.vscode/extensions.json
-.idea/
+
+# Tool caches
+.ruff_cache/

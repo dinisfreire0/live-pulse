@@ -57,9 +57,7 @@ class Poll(models.Model):
 
     @property
     def results_are_public(self):
-        return self.status == self.Status.CLOSED or (
-            self.is_open and self.show_live_results
-        )
+        return self.status == self.Status.CLOSED or (self.is_open and self.show_live_results)
 
 
 class Option(models.Model):
@@ -77,22 +75,3 @@ class Option(models.Model):
 
     def __str__(self):
         return self.text
-
-
-class Vote(models.Model):
-    # `poll` is derivable through `option`, but storing it lets the database
-    # enforce "one vote per participant per poll" with a unique constraint.
-    poll = models.ForeignKey(Poll, on_delete=models.CASCADE, related_name="votes")
-    option = models.ForeignKey(Option, on_delete=models.CASCADE, related_name="votes")
-    voter_token = models.CharField(max_length=64)
-    created_at = models.DateTimeField(auto_now_add=True)
-
-    class Meta:
-        constraints = [
-            models.UniqueConstraint(
-                fields=["poll", "voter_token"], name="one_vote_per_voter_per_poll"
-            ),
-        ]
-
-    def __str__(self):
-        return f"{self.option} ({self.created_at:%H:%M:%S})"

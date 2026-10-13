@@ -3,7 +3,13 @@
 import os
 from pathlib import Path
 
+from dotenv import load_dotenv
+
 BASE_DIR = Path(__file__).resolve().parent.parent
+
+# Values from `.env` never override variables already set in the environment
+# (e.g. by docker-compose).
+load_dotenv(BASE_DIR / ".env")
 
 SECRET_KEY = os.environ.get(
     "DJANGO_SECRET_KEY", "django-insecure-dev-only-key-change-me-in-production"
@@ -20,6 +26,7 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     "rest_framework",
     "polls",
+    "votes",
 ]
 
 MIDDLEWARE = [
@@ -32,7 +39,7 @@ MIDDLEWARE = [
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
 
-ROOT_URLCONF = "livepulse.urls"
+ROOT_URLCONF = "backend.urls"
 
 TEMPLATES = [
     {
@@ -49,12 +56,12 @@ TEMPLATES = [
     },
 ]
 
-WSGI_APPLICATION = "livepulse.wsgi.application"
+WSGI_APPLICATION = "backend.wsgi.application"
 
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.sqlite3",
-        "NAME": os.environ.get("SQLITE_PATH", BASE_DIR / "db.sqlite3"),
+        "NAME": os.environ.get("SQLITE_PATH") or BASE_DIR / "db.sqlite3",
     }
 }
 

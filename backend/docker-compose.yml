@@ -1,6 +1,13 @@
+# Runs the whole app (API + frontend) with one command, from this folder:
+#   docker compose up --build
+name: live-pulse
+
 services:
   backend:
-    build: ./backend
+    build: .
+    env_file:
+      - path: .env
+        required: false
     environment:
       SQLITE_PATH: /app/data/db.sqlite3
     volumes:
@@ -9,7 +16,7 @@ services:
       - "8000:8000"
 
   frontend:
-    build: ./frontend
+    build: ../frontend
     environment:
       API_PROXY_TARGET: http://backend:8000
     ports:
