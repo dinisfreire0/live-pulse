@@ -1,0 +1,46 @@
+// Design tokens shared by every component stylesheet (`@use '…/styles/tokens' as *;`).
+
+$color-bg: #f6f5fb;
+$color-surface: #ffffff;
+$color-border: #e3e0ef;
+$color-text: #1d1b29;
+$color-muted: #6b6880;
+$color-primary: #6c3ce1;
+$color-primary-dark: #5229bd;
+$color-primary-soft: #efe9fd;
+$color-success: #1f8a5b;
+$color-success-soft: #e3f5ec;
+$color-danger: #c4314b;
+$color-danger-soft: #fbe7ea;
+$color-warning: #a86400;
+$color-warning-soft: #fff3dc;
+
+$radius-sm: 6px;
+$radius: 12px;
+$radius-pill: 999px;
+
+$shadow:
+  0 1px 2px rgba(29, 27, 41, 0.06),
+  0 4px 16px rgba(29, 27, 41, 0.05);
+
+$space-1: 4px;
+$space-2: 8px;
+$space-3: 12px;
+$space-4: 16px;
+$space-5: 24px;
+$space-6: 32px;
+
+$breakpoint-sm: 640px;
+
+@mixin mobile {
+  @media (max-width: $breakpoint-sm) {
+    @content;
+  }
+}
+
+@mixin card {
+  background: $color-surface;
+  border: 1px solid $color-border;
+  border-radius: $radius;
+  box-shadow: $shadow;
+}

@@ -1,0 +1,31 @@
+@use '../../styles/tokens' as *;
+
+.feedback {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: $space-3;
+  padding: $space-3 $space-4;
+  border: 1px solid transparent;
+  border-radius: $radius-sm;
+  font-weight: 500;
+
+  &--success {
+    background: $color-success-soft;
+    border-color: rgba($color-success, 0.25);
+    color: $color-success;
+  }
+
+  &--error {
+    background: $color-danger-soft;
+    border-color: rgba($color-danger, 0.25);
+    color: $color-danger;
+  }
+
+  &--info {
+    background: $color-primary-soft;
+    border-color: rgba($color-primary, 0.2);
+    color: $color-primary-dark;
+  }
+}

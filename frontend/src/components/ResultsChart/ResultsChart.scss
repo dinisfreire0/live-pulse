@@ -1,0 +1,63 @@
+@use '../../styles/tokens' as *;
+
+.results-chart {
+  &__list {
+    display: grid;
+    gap: $space-4;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  &__labels {
+    display: flex;
+    justify-content: space-between;
+    gap: $space-3;
+    margin-bottom: $space-1;
+  }
+
+  &__text {
+    font-weight: 600;
+    overflow-wrap: anywhere;
+  }
+
+  &__value {
+    font-variant-numeric: tabular-nums;
+    font-weight: 700;
+    white-space: nowrap;
+  }
+
+  &__votes {
+    color: $color-muted;
+    font-weight: 400;
+  }
+
+  &__track {
+    height: 12px;
+    overflow: hidden;
+    border-radius: $radius-pill;
+    background: #ecebf1;
+  }
+
+  &__bar {
+    height: 100%;
+    border-radius: inherit;
+    background: rgba($color-primary, 0.45);
+    transition: width 0.4s ease;
+  }
+
+  &__row--leading &__bar {
+    background: $color-primary;
+  }
+
+  &__total {
+    margin: $space-4 0 0;
+    color: $color-muted;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .results-chart__bar {
+    transition: none;
+  }
+}

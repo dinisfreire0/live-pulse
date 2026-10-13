@@ -1,0 +1,33 @@
+@use '../../styles/tokens' as *;
+
+.qr-share {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: $space-4;
+
+  &__code {
+    flex-shrink: 0;
+    border-radius: $radius-sm;
+    background: #fff;
+  }
+
+  &__body {
+    display: grid;
+    flex: 1 1 180px;
+    justify-items: start;
+    gap: $space-2;
+    min-width: 0;
+  }
+
+  &__title {
+    margin: 0;
+    font-weight: 700;
+  }
+
+  &__link {
+    max-width: 100%;
+    font-size: 0.875rem;
+    overflow-wrap: anywhere;
+  }
+}

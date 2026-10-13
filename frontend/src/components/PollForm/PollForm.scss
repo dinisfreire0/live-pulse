@@ -1,0 +1,65 @@
+@use '../../styles/tokens' as *;
+
+.poll-form {
+  @include card;
+  display: grid;
+  gap: $space-5;
+  padding: $space-5;
+
+  @include mobile {
+    padding: $space-4;
+  }
+
+  &__field {
+    display: grid;
+    gap: $space-2;
+  }
+
+  &__options {
+    margin: 0;
+    padding: 0;
+    border: 0;
+  }
+
+  &__label {
+    padding: 0;
+    margin-bottom: $space-1;
+    font-weight: 700;
+  }
+
+  &__option {
+    display: grid;
+    grid-template-columns: 28px 1fr auto;
+    align-items: center;
+    gap: $space-2;
+  }
+
+  &__option-index {
+    color: $color-muted;
+    font-weight: 700;
+    text-align: center;
+  }
+
+  &__add {
+    justify-self: start;
+    margin-top: $space-1;
+  }
+
+  &__error {
+    margin: 0;
+    color: $color-danger;
+    font-size: 0.875rem;
+  }
+
+  &__actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: $space-3;
+  }
+
+  &__hint {
+    margin: 0;
+    font-size: 0.875rem;
+  }
+}
