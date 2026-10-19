@@ -9,7 +9,6 @@ export function useHostPollDetail(pollId: number) {
   const load = useCallback(() => hostPollsApi.get(pollId), [pollId]);
   const { data: poll, setData: setPoll, error, loading, reload } = useResource(load);
 
-  // Results update by themselves while votes can still arrive.
   const liveStatus = useEventSource<HostPoll>(
     poll?.status === 'open' ? hostPollsApi.streamUrl(pollId) : null,
     setPoll,

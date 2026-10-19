@@ -1,6 +1,5 @@
 type ErrorBody = Record<string, unknown> | null;
 
-/** Flattens DRF error payloads (`{field: [msg]}`, `{field: {index: [msg]}}`) into string lists. */
 function collectMessages(value: unknown): string[] {
   if (typeof value === 'string') return [value];
   if (Array.isArray(value)) return value.flatMap(collectMessages);

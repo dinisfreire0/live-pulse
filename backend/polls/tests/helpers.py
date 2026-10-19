@@ -8,8 +8,6 @@ TOKEN = "voter-token-1"
 
 
 class PollAPITestCase(APITestCase):
-    """Shared helpers for API tests in the polls and votes apps."""
-
     def make_poll(self, status=Poll.Status.OPEN, options=("Sim", "Não"), **fields):
         poll = create_poll("Gostas de pizza?", list(options))
         Poll.objects.filter(pk=poll.pk).update(status=status, **fields)

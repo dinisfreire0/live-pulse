@@ -2,8 +2,6 @@ import { type FormEvent, useRef, useState } from 'react';
 import { toApiError } from '../../api/client.ts';
 import type { NewPoll } from '../../api/types.ts';
 
-// Mirrors the backend rules so most mistakes are caught before a round trip;
-// the backend remains the source of truth and its messages are shown too.
 export const MIN_OPTIONS = 2;
 export const MAX_OPTIONS = 5;
 

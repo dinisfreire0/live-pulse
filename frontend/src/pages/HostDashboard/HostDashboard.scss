@@ -1,6 +1,5 @@
 @use '../../styles' as *;
 
-// Desktop columns: question | status | votes | date
 $row-columns: 1fr 110px 80px 120px;
 
 .host-dashboard {

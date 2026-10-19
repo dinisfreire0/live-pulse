@@ -7,11 +7,6 @@ class PollQuerySet(models.QuerySet):
         return self.exclude(status=Poll.Status.DRAFT)
 
     def close_expired(self):
-        """Close every open poll whose timer has run out.
-
-        Polls are closed lazily (whenever they are read) instead of by a
-        background scheduler, which keeps the deployment to a single process.
-        """
         now = timezone.now()
         return self.filter(status=Poll.Status.OPEN, closes_at__lte=now).update(
             status=Poll.Status.CLOSED, updated_at=now
@@ -24,7 +19,6 @@ class Poll(models.Model):
         OPEN = "open", "Aberta"
         CLOSED = "closed", "Fechada"
 
-    # Status can only move forward: Draft -> Open -> Closed.
     ALLOWED_TRANSITIONS = {
         Status.DRAFT: {Status.OPEN},
         Status.OPEN: {Status.CLOSED},

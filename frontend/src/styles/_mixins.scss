@@ -1,11 +1,5 @@
-// -----------------------------------------------------------------------------
-// Reusable style patterns. Each mixin only uses tokens from `_variables.scss`.
-// -----------------------------------------------------------------------------
-
 @use 'sass:map';
 @use 'variables' as *;
-
-// Responsive ------------------------------------------------------------------
 
 @mixin below($breakpoint) {
   @media (max-width: $breakpoint) {
@@ -25,10 +19,6 @@
   }
 }
 
-// Layout ----------------------------------------------------------------------
-
-// Flex row with the most common options in one line, e.g.
-// `@include flex($gap: $space-2, $wrap: wrap);`
 @mixin flex($align: center, $justify: null, $gap: null, $wrap: null) {
   display: flex;
   flex-wrap: $wrap;
@@ -37,7 +27,6 @@
   gap: $gap;
 }
 
-// Wrapping row with items pushed to both ends (headers, toolbars).
 @mixin flex-between($gap: $space-2) {
   @include flex($justify: space-between, $gap: $gap, $wrap: wrap);
 }
@@ -49,7 +38,6 @@
   gap: $gap;
 }
 
-// Vertical stack of blocks with an even gap.
 @mixin stack($gap: $space-4) {
   display: grid;
   gap: $gap;
@@ -72,8 +60,6 @@
   border: 0;
 }
 
-// Surfaces --------------------------------------------------------------------
-
 @mixin card($padding: null, $padding-mobile: null) {
   padding: $padding;
   border: $border-width solid $color-border;
@@ -88,7 +74,6 @@
   }
 }
 
-// Placeholder box shown when a list has no items.
 @mixin empty-state($padding: $space-5) {
   padding: $padding;
   border: $border-width dashed $color-border;
@@ -97,9 +82,6 @@
   text-align: center;
 }
 
-// Colors ----------------------------------------------------------------------
-
-// Applies one of the `$tones` (info, success, danger, warning, neutral).
 @mixin tone($name, $bordered: false) {
   $tone: map.get($tones, $name);
   @if not $tone {
@@ -114,7 +96,6 @@
   }
 }
 
-// Small rounded label (status badges, countdown).
 @mixin pill($font-size: $font-size-sm, $gap: $space-1) {
   display: inline-flex;
   align-items: center;
@@ -125,7 +106,6 @@
   white-space: nowrap;
 }
 
-// Round dot; uses the current text color unless told otherwise.
 @mixin dot($size: $dot-size-md, $color: currentColor) {
   flex-shrink: 0;
   width: $size;
@@ -134,21 +114,17 @@
   background: $color;
 }
 
-// Typography ------------------------------------------------------------------
-
 @mixin text-secondary {
   color: $color-text-muted;
   font-size: $font-size-sm;
 }
 
-// Small uppercase label above a section.
 @mixin eyebrow($font-size: $font-size-sm, $letter-spacing: $letter-spacing-wider) {
   font-size: $font-size;
   letter-spacing: $letter-spacing;
   text-transform: uppercase;
 }
 
-// Long user text (questions, options, URLs) must never overflow its box.
 @mixin break-words {
   overflow-wrap: anywhere;
 }
@@ -156,8 +132,6 @@
 @mixin tabular-nums {
   font-variant-numeric: tabular-nums;
 }
-
-// Interaction -----------------------------------------------------------------
 
 @mixin transition($properties...) {
   transition-property: $properties;
@@ -180,7 +154,6 @@
   box-shadow: $shadow-focus;
 }
 
-// Native checkbox / radio at a consistent size and brand color.
 @mixin checkable($size) {
   flex-shrink: 0;
   width: $size;
@@ -188,8 +161,6 @@
   margin: 0;
   accent-color: $color-primary;
 }
-
-// Buttons ---------------------------------------------------------------------
 
 @mixin button-base {
   @include inline-flex-center($space-2);
@@ -214,7 +185,6 @@
   }
 }
 
-// Filled button in a given color, darker on hover.
 @mixin button-variant($background, $hover-background, $color: $color-on-primary) {
   border-color: $background;
   background: $background;

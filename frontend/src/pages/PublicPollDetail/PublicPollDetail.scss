@@ -58,8 +58,6 @@
       border-color: rgba($color-primary, $alpha-hover-border);
     }
 
-    // `:hover` is more specific than the modifier and sticks after a tap on
-    // touch screens, so the selected state has to cover it too.
     &--selected,
     &--selected:hover {
       border-color: $color-primary;

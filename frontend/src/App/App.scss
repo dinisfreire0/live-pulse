@@ -1,5 +1,3 @@
-// Global base styles and shared utility classes.
-// Component styles live next to each component.
 @use '../styles' as *;
 
 *,
@@ -48,7 +46,6 @@ select {
   outline-offset: $outline-offset;
 }
 
-// Respect the OS "reduce motion" setting everywhere (pulses, bars, hovers).
 @include reduced-motion {
   *,
   *::before,
@@ -58,8 +55,6 @@ select {
     transition-duration: 0.01ms !important;
   }
 }
-
-// Utilities -------------------------------------------------------------------
 
 .btn {
   @include button-base;

@@ -1,6 +1,5 @@
 @use '../../styles' as *;
 
-// Feedback kind (from Feedback.ts) → color tone.
 $feedback-tones: (
   success: success,
   error: danger,

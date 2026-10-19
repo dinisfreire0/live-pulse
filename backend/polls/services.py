@@ -12,7 +12,6 @@ def get_host_poll(pk):
 
 
 def get_public_poll(pk):
-    """Drafts do not exist as far as the audience is concerned (404)."""
     Poll.objects.close_expired()
     return get_object_or_404(Poll.objects.visible_to_public().prefetch_related("options"), pk=pk)
 
@@ -57,5 +56,4 @@ def get_results(poll):
 
 
 def change_signature(poll):
-    """A cheap fingerprint of everything a live client cares about."""
     return (poll.status, poll.show_live_results, poll.closes_at, poll.votes.count())

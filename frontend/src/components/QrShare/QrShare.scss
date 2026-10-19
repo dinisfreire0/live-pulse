@@ -8,7 +8,6 @@ $qr-body-min-width: 180px;
   &__code {
     flex-shrink: 0;
     border-radius: $radius-sm;
-    // QR codes need a white quiet zone to scan reliably, whatever the theme.
     background: $color-surface;
   }
 

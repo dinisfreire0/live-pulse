@@ -15,9 +15,6 @@ class OptionSerializer(serializers.ModelSerializer):
         fields = ["id", "text"]
 
 
-# --- Host -------------------------------------------------------------------
-
-
 class HostPollListSerializer(serializers.ModelSerializer):
     total_votes = serializers.IntegerField(read_only=True)
 
@@ -123,9 +120,6 @@ class PollUpdateSerializer(serializers.Serializer):
         return attrs
 
 
-# --- Public -----------------------------------------------------------------
-
-
 class PublicPollListSerializer(serializers.ModelSerializer):
     class Meta:
         model = Poll
@@ -150,6 +144,4 @@ class PublicPollDetailSerializer(serializers.ModelSerializer):
         ]
 
     def get_results(self, poll):
-        # Hidden while the poll is open, so the audience is not influenced,
-        # unless the host explicitly enabled live results.
         return get_results(poll) if poll.results_are_public else None

@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react';
 
-/** Seconds left until `closesAt` (never negative), re-rendering every second. */
 export function useCountdown(closesAt: string | null): number | null {
   const [now, setNow] = useState(() => Date.now());
 

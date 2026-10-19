@@ -1,5 +1,3 @@
-"""Django settings for the Live Pulse project."""
-
 import os
 from pathlib import Path
 
@@ -7,8 +5,6 @@ from dotenv import load_dotenv
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-# Values from `.env` never override variables already set in the environment
-# (e.g. by docker-compose).
 load_dotenv(BASE_DIR / ".env")
 
 SECRET_KEY = os.environ.get(
@@ -74,8 +70,6 @@ STATIC_URL = "static/"
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
-# No authentication is required by the challenge, so the API is open and
-# session auth (which would enforce CSRF on the JSON endpoints) is disabled.
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": [],
     "DEFAULT_PERMISSION_CLASSES": ["rest_framework.permissions.AllowAny"],

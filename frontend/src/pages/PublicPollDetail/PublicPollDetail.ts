@@ -23,9 +23,6 @@ export function usePublicPollDetail(pollId: number) {
   const [voteMessage, setVoteMessage] = useState<string | null>(null);
   const [voteError, setVoteError] = useState<string | null>(null);
 
-  // Live updates while the poll is open: the page switches to the results as
-  // soon as the host closes it (or shows live results if the host allows it).
-  // Snapshots don't know who is watching, so `has_voted` is kept from local state.
   const applySnapshot = useCallback(
     (snapshot: PublicPoll) =>
       setPoll((current) => (current ? { ...snapshot, has_voted: current.has_voted } : current)),
@@ -52,7 +49,6 @@ export function usePublicPollDetail(pollId: number) {
     } catch (err) {
       const apiError = toApiError(err);
       setVoteError(apiError.message);
-      // Already voted / poll closed meanwhile: show the real current state.
       if (apiError.status === 409) await reload();
     } finally {
       setSubmitting(false);

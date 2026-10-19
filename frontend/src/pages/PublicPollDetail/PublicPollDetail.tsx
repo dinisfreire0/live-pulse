@@ -116,6 +116,5 @@ function PollDetail({ pollId }: { pollId: number }) {
 export default function PublicPollDetail() {
   const pollId = parsePollId(useParams().pollId);
   if (pollId === null) return <NotFound />;
-  // Keyed so that navigating to another poll starts from a clean state.
   return <PollDetail key={pollId} pollId={pollId} />;
 }

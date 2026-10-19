@@ -1,234 +1,148 @@
-# Live Pulse — votações em tempo real
+# Live Pulse
 
-Aplicação full-stack para votações em direto num evento. Tem duas interfaces:
+Aplicação web para fazer votações em direto num evento, como uma aula ou uma palestra. Tem duas partes:
 
-- **Público** (`/polls`): vê as votações abertas e fechadas, vota e vê os resultados quando a votação fecha.
-- **Anfitrião** (`/host`): cria votações, muda o estado (Rascunho → Aberta → Fechada) e acompanha os resultados em direto.
+- **Público** (`/polls`): vê as votações, vota e, quando a votação fecha, vê os resultados.
+- **Anfitrião** (`/host`): cria votações, abre-as e fecha-as, e acompanha os resultados em direto.
 
-**Stack:** Django 5 + Django REST Framework + SQLite no backend, React 19 + TypeScript + Vite + SCSS no frontend, Server-Sent Events para o tempo real.
-
----
-
-## Estrutura do repositório
-
-```
-jek/
-├── .githooks/               # pre-commit: ruff + oxlint antes de cada commit
-├── .github/workflows/       # CI: lint, testes e build em cada push / PR
-├── backend/
-│   ├── backend/             # projeto Django: settings, urls, asgi, wsgi
-│   ├── polls/               # app: votações, opções, resultados e streams SSE
-│   ├── votes/               # app: votos e regra "um voto por pessoa"
-│   ├── postman/             # coleção Postman com todos os endpoints
-│   ├── .env.example         # variáveis de ambiente (copiar para .env)
-│   ├── docker-compose.yml   # sobe backend + frontend
-│   ├── Dockerfile
-│   ├── manage.py
-│   ├── pyproject.toml       # configuração do ruff
-│   ├── requirements.txt
-│   └── requirements-dev.txt
-├── frontend/                # React + TypeScript + Vite (ver "Estrutura do frontend")
-└── README.md
-```
+Feito com **Django** (backend), **React + TypeScript** (frontend) e **SQLite** (base de dados).
 
 ---
 
 ## Como correr
 
-### Opção A: Docker (um único comando)
+### Com Docker (um comando)
 
 ```bash
 cd backend
 docker compose up --build
 ```
 
-Depois abre **http://localhost:5173**. A base de dados SQLite fica num volume do Docker. O `.env` é opcional: se existir em `backend/`, o compose usa-o.
+Depois abre **http://localhost:5173**.
 
-### Opção B: localmente
+### Sem Docker
 
-Requisitos: Python 3.11+ e Node 20+.
+Precisa de Python 3.11+ e Node 20+. São precisos dois terminais.
 
+**Terminal 1: backend**
 ```bash
-# Terminal 1: backend (http://127.0.0.1:8000)
 cd backend
-cp .env.example .env               # opcional: os valores por omissão servem para desenvolvimento
 python3 -m venv .venv
-source .venv/bin/activate          # Windows: .venv\Scripts\activate
+source .venv/bin/activate        # no Windows: .venv\Scripts\activate
 pip install -r requirements-dev.txt
+cp .env.example .env
 python manage.py migrate
 python manage.py runserver
 ```
 
+**Terminal 2: frontend**
 ```bash
-# Terminal 2: frontend (http://localhost:5173)
 cd frontend
 npm install
 npm run dev
 ```
 
-Abre **http://localhost:5173**. O Vite reencaminha `/api` para o Django, por isso não é preciso configurar CORS.
+Depois abre **http://localhost:5173**.
 
-### Testes e qualidade de código
+### Testes
 
 ```bash
 cd backend
-python manage.py test                # 16 testes da API (apps polls e votes)
-ruff check . && ruff format --check  # lint + formatação
-
-cd frontend
-npm run lint && npm run build        # oxlint + verificação de tipos
+python manage.py test
 ```
-
-- **Git hooks:** ativa uma vez por clone com `git config core.hooksPath .githooks`. A partir daí, cada commit corre o ruff e o oxlint e é bloqueado se falharem.
-- **CI:** [`.github/workflows/ci.yml`](.github/workflows/ci.yml) corre os mesmos passos no GitHub Actions em cada push para `main` e em cada pull request.
-- **Postman:** importa [`backend/postman/LivePulse.postman_collection.json`](backend/postman/LivePulse.postman_collection.json). A pasta **Fluxo completo** percorre o ciclo de vida de uma votação (criar → abrir → votar → fechar → resultados) com asserções em cada passo. Também corre no terminal com `npx newman run backend/postman/LivePulse.postman_collection.json --folder "Fluxo completo"`, com o backend ligado.
-
-### Votar a partir do telemóvel
-
-O servidor do Vite também fica disponível na rede local (o endereço "Network" que aparece no terminal). Se o anfitrião abrir o painel em `localhost`, o código QR aponta para `localhost`, que não funciona no telemóvel. Para evitar isso, abre o painel pelo IP da rede, ou define `VITE_PUBLIC_BASE_URL=http://<ip>:5173` em `frontend/.env.local`.
 
 ---
 
 ## Níveis completos
 
-| Nível | Estado | Notas |
+| Nível | | O que fiz |
 |---|---|---|
-| **1 — Essencial** | ✅ | Lista pública (sem rascunhos), votar com feedback, resultados só depois de fechar, criar votações (2 a 5 opções), mudar o estado, resultados com contagens e total, botões de atualizar |
-| **2 — Votação justa** | ✅ | Um voto por pessoa, o backend recusa votos em votações não abertas, validação com mensagens claras, percentagens e gráfico de barras |
-| **3 — Resultados em direto** | ✅ | O painel do anfitrião atualiza-se sozinho a cada voto (SSE). **Extra:** a página do público passa automaticamente para os resultados quando a votação fecha, e o anfitrião pode ligar "mostrar resultados em direto ao público" em cada votação |
-| **Extras** | ✅ | Layout responsivo / mobile, Docker Compose, testes automáticos no backend, código QR + copiar link, temporizador que fecha a votação automaticamente |
-
-Ficou de fora, de propósito: votações de escolha múltipla e nuvem de palavras. Mudavam o modelo de dados e o enunciado pede para manter o âmbito pequeno.
+| **1 – Essencial** | ✅ | Lista de votações para o público (sem rascunhos), votar, resultados só depois de fechar, criar votações com 2 a 5 opções, mudar o estado, ver votos por opção e o total |
+| **2 – Votação justa** | ✅ | Um voto por pessoa, o backend recusa votos em votações que não estão abertas, mensagens de erro claras, percentagens e gráfico de barras |
+| **3 – Resultados em direto** | ✅ | O painel do anfitrião atualiza-se sozinho quando chegam votos. A página do público também muda sozinha para os resultados quando a votação fecha, e o anfitrião pode deixar o público ver os resultados em direto |
+| **Extras** | ✅ | Versão para telemóvel, Docker, testes automáticos, código QR para entrar na votação e temporizador que fecha a votação sozinha |
 
 ---
 
 ## Decisões técnicas
 
-### Porquê esta stack
+### Tecnologias
 
-- **Django + DRF:** é a stack recomendada. O ORM, as migrações e o admin vêm incluídos. Os serializers do DRF tratam da validação e das mensagens de erro de forma declarativa, e as views ficam curtas.
-- **SQLite:** zero configuração e suficiente para um evento. Mudar para PostgreSQL é só mudar `DATABASES`.
-- **Configuração por `.env`:** o `settings.py` lê `backend/.env` com `python-dotenv` (chave secreta, `DEBUG`, hosts, caminho da base de dados). O `.env` não vai para o Git. O `.env.example` documenta as variáveis.
-- **Ruff:** um só programa faz o lint e a formatação do Python, e é muito rápido. Por isso cabe num pre-commit sem atrasar os commits.
-- **React + TypeScript + Vite:** os tipos em [`frontend/src/api/types.ts`](frontend/src/api/types.ts) descrevem exatamente o contrato da API, por isso uma mudança no backend aparece como erro de compilação. O Vite dá um servidor de desenvolvimento rápido e o proxy para a API.
-- **Poucas dependências:** só `react-router-dom` (rotas) e `qrcode.react` (QR). Os dados são carregados com `fetch` e hooks próprios. Para dois ecrãs com pouco estado partilhado, TanStack Query ou Redux seriam engenharia a mais.
-- **SCSS simples:** cada componente tem a sua folha de estilos (BEM). Todas as cores, tamanhos e tempos vêm de variáveis partilhadas, e os padrões repetidos vêm de mixins (ver [Estilos](#estilos-variáveis-e-mixins)). Não usei biblioteca de UI: a interface é pequena e assim o CSS fica todo explícito.
+- **Django + Django REST Framework:** é a stack recomendada e já traz quase tudo pronto (base de dados, validação de dados, página de administração).
+- **SQLite:** não precisa de instalação e chega para uma aplicação deste tamanho.
+- **React + TypeScript + Vite:** o TypeScript avisa-me de erros antes de correr o código, por exemplo se usar um campo que a API não devolve.
+- **Poucas bibliotecas extra:** só React Router (páginas), qrcode.react (código QR) e Sass (estilos). Para falar com o backend uso `fetch`, porque a aplicação é pequena e não precisava de Redux nem de TanStack Query.
 
-### Duas apps Django, separadas por domínio
+### Organização do código
 
-- **`polls`:** votações e opções, as regras de estado, os resultados (calculados) e os streams SSE. É a parte do anfitrião e da leitura pública.
-- **`votes`:** o modelo `Vote`, o serviço que regista um voto e o endpoint `POST /api/polls/{id}/votes/`.
+**Backend:** dividi o Django em duas apps:
+- `polls`: votações, opções, resultados e atualizações em direto;
+- `votes`: os votos.
 
-A dependência é só num sentido nos modelos (`Vote` aponta para `Poll` e `Option`). Cada app tem os seus `models`, `serializers`, `services`, `views`, `urls`, `admin` e `tests`. As views ficam finas e a lógica de negócio vive em `services.py`.
+Em cada app, cada ficheiro tem uma função: `models.py` (tabelas), `urls.py` (endereços), `views.py` (recebe os pedidos), `serializers.py` (valida os dados), `services.py` (as ações, como criar votação ou votar) e `tests/`.
 
-Não há `celery.py`: o único trabalho "em segundo plano" é o temporizador, que se resolve sem worker nem Redis (ver [Temporizador](#temporizador)).
-
-### Modelo de dados
+**Frontend:** cada página e cada componente tem 3 ficheiros:
 
 ```
-polls.Poll   (question, status, show_live_results, closes_at, created_at, updated_at)
- ├── polls.Option (poll → Poll, text, position)          UNIQUE(poll, position)
- └── votes.Vote   (poll → Poll, option → Option,
-                   voter_token, created_at)              UNIQUE(poll, voter_token)
+PollCard/
+├── PollCard.tsx    # o que aparece no ecrã
+├── PollCard.ts     # a lógica
+└── PollCard.scss   # os estilos
 ```
 
-- `status` é um `TextChoices` (`draft` / `open` / `closed`). As transições permitidas estão definidas no modelo (`Poll.ALLOWED_TRANSITIONS`) e só andam para a frente.
-- Os resultados **não são guardados**: são calculados com `COUNT` sobre `Vote`, por isso nunca ficam dessincronizados.
-- **Onde fica o "um voto por pessoa":** na tabela `Vote`, com a restrição `UNIQUE(poll, voter_token)`. Por isso `Vote` guarda também `poll`, embora isso se possa deduzir a partir de `option`. É uma desnormalização deliberada: permite à **base de dados** garantir a regra, mesmo com dois pedidos em simultâneo (o `IntegrityError` passa a `409`). O serializer confirma sempre que a opção pertence à votação.
+As cores e os tamanhos estão em variáveis partilhadas (`src/styles/`), e os pedidos ao backend estão todos em `src/api/`.
 
-### API REST
+### Base de dados
 
-O público e o anfitrião têm namespaces separados. Assim a regra "o público nunca vê rascunhos nem resultados de votações abertas" fica isolada num só sítio, em vez de espalhada por condições.
-
-| Método | Endpoint | Descrição |
-|---|---|---|
-| GET | `/api/polls/` | Votações abertas e fechadas |
-| GET | `/api/polls/{id}/` | Detalhe. `results` vem a `null` enquanto está aberta (salvo "em direto"). `has_voted` vem do header `X-Voter-Token` |
-| POST | `/api/polls/{id}/votes/` | `{option_id, voter_token}` → `201`. Pode dar `400` (opção inválida), `404` (rascunho) ou `409` (já votou / não está aberta) |
-| GET | `/api/polls/{id}/results/` | `403` enquanto os resultados não forem públicos |
-| GET | `/api/polls/{id}/stream/` | SSE para o público |
-| GET / POST | `/api/host/polls/` | Listar todas (com `total_votes`) / criar `{question, options[]}` |
-| GET / PATCH | `/api/host/polls/{id}/` | Detalhe com resultados / `{status?, show_live_results?, duration_seconds?}` |
-| GET | `/api/host/polls/{id}/results/` | Resultados a qualquer momento |
-| GET | `/api/host/polls/{id}/stream/` | SSE para o anfitrião |
-
-Os erros seguem o formato do DRF: `{"detail": "..."}` ou `{"campo": ["mensagem"]}`, com mensagens em português.
-
-### Tempo real: porquê Server-Sent Events
-
-- **Direção dos dados:** os votos chegam por um `POST` normal. O que precisa de tempo real vai só **do servidor para o browser**, e é exatamente para isso que serve o SSE. WebSockets são bidirecionais, o que aqui não é necessário. Além disso, em Django obrigam a usar Channels, ASGI e normalmente Redis.
-- **Complexidade:** do lado do cliente basta o `EventSource` nativo, que volta a ligar-se sozinho ([`useEventSource.ts`](frontend/src/lib/useEventSource.ts)). Do lado do servidor é um `StreamingHttpResponse` ([`backend/polls/sse.py`](backend/polls/sse.py)).
-- **Como funciona:** cada stream verifica a votação uma vez por segundo, com uma assinatura barata `(status, show_live_results, closes_at, nº de votos)`, e só envia um snapshot completo quando algo muda. Envia um heartbeat a cada 15 s. As ligações fecham ao fim de 5 min e o browser volta a ligar-se de forma transparente.
-- **Escalabilidade (o compromisso):** cada ligação aberta ocupa uma thread do servidor e faz uma query leve por segundo. Para uma sala com dezenas ou centenas de pessoas isto chega perfeitamente. Para milhares, o passo seguinte seria um servidor ASGI com views assíncronas e pub/sub (Redis / `LISTEN/NOTIFY` do PostgreSQL), que notifica no momento do voto em vez de verificar periodicamente.
-- Só há streams enquanto a votação está **aberta**: em rascunho ou fechada, nada muda.
-
-### Um voto por pessoa: como pode ser contornado
-
-Cada browser gera um token aleatório guardado em `localStorage` ([`voterToken.ts`](frontend/src/lib/voterToken.ts)). A base de dados aceita um voto por token em cada votação. Pode ser contornado com:
-
-- uma janela anónima, outro browser ou outro dispositivo;
-- apagar o `localStorage`;
-- chamar a API diretamente com tokens inventados.
-
-Isto é aceitável num evento informal, porque não exige login. Para uma regra mais forte seria preciso identidade real (login / magic link por email), códigos de uso único entregues a cada participante, ou limitação por IP (que falha em redes partilhadas como a de uma sala de aula).
-
-### Temporizador
-
-Ao abrir a votação (ou mais tarde), o anfitrião pode escolher uma duração. O backend guarda `closes_at`. O fecho é **preguiçoso**: sempre que uma votação é lida (listas, detalhe, votos, streams), `Poll.objects.close_expired()` fecha as que já expiraram. Assim não é preciso um scheduler nem um worker à parte. Como os streams leem a votação a cada segundo, quem está a ver passa para os resultados no momento certo.
-
-### Estrutura do frontend
-
-Cada componente e cada página tem **3 ficheiros** com responsabilidades separadas:
+Três tabelas:
 
 ```
-ComponentName/
-├── ComponentName.tsx   # só a apresentação (JSX)
-├── ComponentName.ts    # lógica: hooks, estado, helpers, constantes
-└── ComponentName.scss  # estilos do componente
+Poll (votação)    pergunta, estado, data de criação
+ ├── Option       texto, a que votação pertence
+ └── Vote         opção escolhida, código do votante, data
 ```
 
-```
-frontend/src/
-├── App/            # rotas, caminhos (paths) e estilos globais
-├── api/            # cliente HTTP, endpoints e tipos da API
-├── lib/            # hooks partilhados (useResource, useEventSource), token, formatação
-├── styles/         # _variables.scss, _mixins.scss e _index.scss (design system)
-├── components/     # Layout, PollCard, PollForm, ResultsChart, StatusBadge, Feedback,
-│                   # Countdown, LiveIndicator, QrShare, TimerSelect
-└── pages/          # PublicPollList, PublicPollDetail, HostDashboard,
-                    # HostPollCreate, HostPollDetail, NotFound
-```
+- O estado só pode avançar: **Rascunho → Aberta → Fechada**.
+- Os resultados não são guardados. São calculados contando os votos, por isso estão sempre certos.
 
-Os imports usam a extensão explícita (`./X.ts` / `./X.tsx`) porque os dois ficheiros têm o mesmo nome base.
+### API
 
-### Estilos: variáveis e mixins
-
-Os estilos partilhados vivem em [`frontend/src/styles/`](frontend/src/styles/):
-
-| Ficheiro | Conteúdo |
+| Pedido | O que faz |
 |---|---|
-| [`_variables.scss`](frontend/src/styles/_variables.scss) | Cores (marca, neutros, feedback e um mapa `$tones`), tipografia (família, escala de tamanhos `2xs`…`display`, pesos, alturas de linha), espaçamentos numa grelha de 4px (`$space-1` = 4px … `$space-6` = 32px), raios, alturas de controlos, larguras de layout, breakpoints, sombras, opacidades e tempos de animação |
-| [`_mixins.scss`](frontend/src/styles/_mixins.scss) | Responsivo (`mobile`, `below`, `reduced-motion`), layout (`flex`, `flex-between`, `stack`, `centered-column`, `reset-list`), superfícies (`card`, `empty-state`), cor (`tone`, `pill`, `dot`), texto (`text-secondary`, `eyebrow`, `break-words`), interação (`transition`, `hover-lift`, `focus-ring`, `checkable`) e botões (`button-base`, `button-variant`, `button-size`) |
-| [`_index.scss`](frontend/src/styles/_index.scss) | Reexporta os dois (`@forward`), para que cada componente só precise de `@use '../../styles' as *;` |
+| `GET /api/polls/` | Lista as votações abertas e fechadas (público) |
+| `GET /api/polls/{id}/` | Mostra uma votação. Os resultados só aparecem depois de fechar |
+| `POST /api/polls/{id}/votes/` | Regista um voto |
+| `GET /api/host/polls/` | Lista todas as votações, incluindo rascunhos (anfitrião) |
+| `POST /api/host/polls/` | Cria uma votação |
+| `PATCH /api/host/polls/{id}/` | Muda o estado de uma votação |
 
-Os componentes não têm cores nem medidas escritas à mão. As únicas exceções são 3 medidas de layout próprias de um componente (por exemplo, as colunas da tabela do painel), que ficam como variáveis locais no topo do respetivo `.scss`. O mixin `tone()` liga os estados às cores num só sítio: por exemplo, `StatusBadge.scss` mapeia `draft → warning`, `open → success` e `closed → neutral` e gera as três classes com um `@each`.
+Separei os endereços do público (`/api/polls/`) dos do anfitrião (`/api/host/polls/`). Assim é o backend que garante que o público nunca recebe rascunhos nem resultados de votações abertas.
 
-A validação do formulário repete as regras do backend, para dar feedback imediato. Mesmo assim, o backend continua a ser a fonte de verdade e os erros que devolve são mostrados no campo certo.
+### Tempo real: porque escolhi Server-Sent Events (SSE)
+
+Os votos chegam ao servidor por pedidos normais. A única coisa que precisa de ser "em direto" é o servidor avisar o browser quando há votos novos, ou seja, uma comunicação **num só sentido**. O SSE serve exatamente para isso, funciona com o próprio browser e não precisa de bibliotecas extra.
+
+Os WebSockets comunicam nos dois sentidos, o que aqui não era preciso, e em Django exigem mais configuração. O polling (o browser perguntar de x em x segundos) também funcionava, mas fazia muitos pedidos sem necessidade.
+
+**Limitação:** a minha versão verifica a base de dados a cada segundo para cada pessoa ligada. Chega para uma sala de aula, mas para milhares de pessoas teria de ser feito de outra forma.
+
+### Um voto por pessoa
+
+Quando alguém abre o site, o browser gera um código aleatório e guarda-o. Esse código é enviado com o voto, e a base de dados não aceita dois votos com o mesmo código na mesma votação.
+
+**Como pode ser contornado:** abrindo uma janela anónima, usando outro browser ou outro dispositivo, ou apagando os dados do site. Para evitar isto seria preciso pedir login a quem vota, o que não fazia sentido para um evento rápido.
 
 ### Outras notas
 
-- **Sem autenticação**, como diz o enunciado: o painel do anfitrião é só uma rota separada (`/host`).
-- O público só vê os resultados de uma votação aberta se o anfitrião ligar "mostrar em direto". Por omissão ficam escondidos, para não influenciar os votos.
-- Fechar uma votação pede confirmação, porque não se pode desfazer.
-- Acessibilidade básica: labels, `role="alert"`/`status` no feedback, `progressbar` nas barras e `prefers-reduced-motion`.
+- Não há login, como o enunciado permite: o painel do anfitrião é só uma página separada (`/host`).
+- Enquanto a votação está aberta, o público não vê os resultados, a não ser que o anfitrião ative essa opção.
+- O temporizador guarda a hora a que a votação deve fechar. Quando alguém consulta as votações depois dessa hora, o backend fecha-a.
 
 ---
 
 ## O que melhoraria com mais tempo
 
-- **Autenticação do anfitrião.** Hoje qualquer pessoa que conheça `/host` pode gerir as votações.
-- **Tempo real escalável:** views assíncronas + pub/sub em vez de cada stream consultar a base de dados.
-- **Testes de frontend** (Vitest + Testing Library para os hooks, Playwright para o fluxo completo). O fluxo completo foi validado manualmente num browser headless.
-- Editar e apagar votações em rascunho, e duplicar votações.
-- Escolha múltipla e nuvem de palavras.
-- Configuração de produção: `gunicorn` com workers de threads, servir o build estático do Vite e `DEBUG=0` com uma `SECRET_KEY` verdadeira (já se podem definir no `.env`).
+- **Login para o anfitrião:** neste momento qualquer pessoa que saiba o endereço `/host` consegue gerir as votações.
+- **Testes no frontend:** só o backend tem testes automáticos.
+- **Editar e apagar votações** em rascunho.
+- **Tempo real para muitas pessoas:** avisar os browsers no momento em que chega um voto, em vez de verificar a base de dados a cada segundo.

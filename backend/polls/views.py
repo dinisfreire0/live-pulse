@@ -21,13 +21,9 @@ from .sse import poll_snapshots, sse_response
 VOTER_TOKEN_HEADER = "X-Voter-Token"
 
 
-# --- Host -------------------------------------------------------------------
-
-
 class HostPollListView(APIView):
     def get(self, request):
         Poll.objects.close_expired()
-        # Meta.ordering is ignored by aggregate (GROUP BY) queries, so repeat it.
         polls = Poll.objects.annotate(total_votes=Count("votes")).order_by(*Poll._meta.ordering)
         return Response(HostPollListSerializer(polls, many=True).data)
 
@@ -59,9 +55,6 @@ class HostPollResultsView(APIView):
 def host_poll_stream(request, pk):
     services.get_host_poll(pk)
     return sse_response(poll_snapshots(pk, lambda poll: HostPollDetailSerializer(poll).data))
-
-
-# --- Public -----------------------------------------------------------------
 
 
 class PublicPollListView(APIView):

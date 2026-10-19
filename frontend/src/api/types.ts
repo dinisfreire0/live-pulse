@@ -28,7 +28,6 @@ export type PublicPollSummary = PollBase;
 export interface PublicPoll extends PollBase {
   show_live_results: boolean;
   options: PollOption[];
-  /** `null` while the poll is open, unless the host enabled live results. */
   results: PollResults | null;
 }
 

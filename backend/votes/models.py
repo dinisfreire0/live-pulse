@@ -2,8 +2,6 @@ from django.db import models
 
 
 class Vote(models.Model):
-    # `poll` is derivable through `option`, but storing it lets the database
-    # enforce "one vote per participant per poll" with a unique constraint.
     poll = models.ForeignKey("polls.Poll", on_delete=models.CASCADE, related_name="votes")
     option = models.ForeignKey("polls.Option", on_delete=models.CASCADE, related_name="votes")
     voter_token = models.CharField(max_length=64)

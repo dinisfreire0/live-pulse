@@ -1,11 +1,3 @@
-"""Server-Sent Events helpers.
-
-Each stream re-reads a poll once per second and pushes a new snapshot only
-when its fingerprint (status, live flag, timer, vote count) changes. Polling
-the database server-side keeps this to plain Django with no message broker;
-the browser still gets a push, and EventSource reconnects on its own.
-"""
-
 import json
 import time
 
@@ -16,8 +8,6 @@ from .services import change_signature
 
 CHECK_INTERVAL_SECONDS = 1
 HEARTBEAT_SECONDS = 15
-# Recycle long-lived connections so a forgotten tab does not hold a worker
-# thread forever; the browser reconnects transparently.
 MAX_STREAM_SECONDS = 5 * 60
 
 
